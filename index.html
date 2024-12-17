@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Выбор заведений</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #4A90E2; }
+        button { margin: 10px; padding: 10px; font-size: 16px; }
+        .place { margin: 10px 0; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Выберите заведение</h1>
+    <div id="filters">
+        <label>Цель визита:</label>
+        <select id="purpose">
+            <option>Покушать</option>
+            <option>Поработать в кафе</option>
+            <option>Общение с коллегами</option>
+          	<option>Созвон с коллегами</option>
+			<option>Встреча с клиентами</option>
+          	<option>Take & go</option>
+        </select>
+        <br>
+        <label>Шаговая доступность:</label>
+        <select id="distance">
+            <option value="5">5 минут</option>
+            <option value="10">10 минут</option>
+            <option value="15">15 минут</option>
+        </select>
+        <br>
+        <button onclick="applyFilters()">🔍 Найти</button>
+    </div>
+    <div id="results"></div>
+
+    <script>
+        let places = [
+            {'name': 'SURF coffee x Secret Spot', 'address': 'Конный пер., 12', 'type': 'Кофейня', 'average_check': 600, 'rating': 4.8, 'distance': 5, 'purposes': ['Покушать', 'Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHEn7EPv'},
+    {'name': 'Star Hit Cafe', 'address': 'ул. Шаболовка, 31Г', 'type': 'Кофейня', 'average_check': 500, 'rating': 4.4, 'distance': 3, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHEnzT-I'},
+    {'name': 'Mates', 'address': 'ул. Шаболовка, 19', 'type': 'Кофейня', 'average_check': 750, 'rating': 4.6,'distance': 5, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7M8O'},
+    {'name': 'Правда кофе', 'address': 'ул. Шаболовка, 30/12', 'type': 'Кофейня', 'average_check': 250, 'rating': 4.5, 'distance': 2, 'purposes': ['Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHEn7YIm'},
+    {'name': 'The Фишка', 'address': 'ул. Шаболовка, 29, корп. 2', 'type': 'Стрит-фуд', 'average_check': 350 , 'rating': 5.0,'distance': 4, 'purposes': ['Покушать', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn74m~'},
+    {'name': 'Pho Ngon', 'address': 'ул. Шаболовка, 27', 'type': 'Кофейня', 'average_check': 450, 'rating': 4.9,'distance': 4, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7F5C'},
+    {'name': 'Meat me', 'address': 'ул. Шаболовка, 29, корп. 2', 'type': 'Стрит-фуд', 'average_check': 500, 'rating': 4.5, 'distance': 4, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7Njn'},
+    {'name': 'Кулинарная лавка братьев Караваевых', 'address': 'ул. Шаболовка, 29, корп. 2', 'type': 'Стрит-фуд', 'average_check': 600, 'rating': 4.4, 'distance': 4, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7RlE'},
+    {'name': "Vak’e khinkali bar", 'address': 'ул. Шаболовка, 29, корп. 2', 'type': 'Восточная', 'average_check': 800, 'rating': 4.9, 'distance': 4, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn763Y'},
+    {'name': "Black Grill House", 'address': 'ул. Шаболовка, 29, корп. 2', 'type': 'Американская', 'average_check': 600, 'rating': 4.4,
+     'distance': 4, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7OIJ'},
+    {'name': "Тануки", 'address': 'ул. Шаболовка, 25, корп. 2', 'type': 'Японская', 'average_check': 1200, 'rating': 4.4,
+     'distance': 9, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Созвон с коллегами', 'Встреча с клиентами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7Wkv'},
+    {'name': "Moon Eclipse", 'address': 'ул. Шаболовка, 31Г', 'type': 'Разнообразная', 'average_check': 800, 'rating': 4.4,
+     'distance': 4, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHEn78jF'},
+    {'name': "Brasserie Lambic", 'address': 'ул. Шаболовка, 19', 'type': 'Европейская', 'average_check': 1000, 'rating': 4.7,
+     'distance': 9, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7Do-'},
+    {'name': "DIZENGOF/99", 'address': 'ул. Шаболовка, 19', 'type': 'Разнообразная', 'average_check': 1000, 'rating': 4.9,
+     'distance': 9, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7PjE'},
+    {'name': "Трамвай", 'address': 'ул. Шаболовка, 19', 'type': 'Европейская', 'average_check': 1500, 'rating': 4.4,
+     'distance': 9, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHEn7XyJ'},
+    {'name': "Одесса-мама", 'address': 'ул. Шаболовка, 14, стр. 2', 'type': 'Европейская', 'average_check': 1000, 'rating': 4.7,
+     'distance': 5, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Встреча с клиентами'],
+     'url': 'https://yandex.ru/maps/-/CHEn729u'},
+    {'name': "Хачапури", 'address': 'ул. Шаболовка, 14, стр. 2', 'type': 'Восточная', 'average_check': 1100, 'rating': 4.6,
+     'distance': 5, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Встреча с клиентами'],
+     'url': 'https://yandex.ru/maps/-/CHErAAnl'},
+    {'name': "Уют", 'address': 'ул. Шаболовка, 24', 'type': 'Восточная', 'average_check': 450, 'rating': 4.3,
+     'distance': 2, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Встреча с клиентами'],
+     'url': 'https://yandex.ru/maps/-/CHErAEjt'},
+    {'name': "Prime", 'address': 'ул. Шаболовка, 24', 'type': 'Европейская', 'average_check': 1000, 'rating': 4.3,
+     'distance': 2, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами', 'Встреча с клиентами'],
+     'url': 'https://yandex.ru/maps/-/CHErAM5T'},
+    {'name': 'Cofix', 'address': 'ул. Шаболовка, 30/12', 'type': 'Кофейня', 'average_check': 500,
+     'rating': 4.1, 'distance': 3, 'purposes': ['Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHErAQof'},
+    {'name': 'French Bakery SeDelice', 'address': 'ул. Шаболовка, 30/12', 'type': 'Европейская', 'average_check': 600, 'rating': 4.4,
+     'distance': 3, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHErAU2-'},
+    {'name': 'Чевапи Гриль', 'address': 'ул. Шаболовка, 30/12', 'type': 'Европейская', 'average_check': 600, 'rating': 5.0,
+     'distance': 3, 'purposes': ['Покушать', 'Поработать в кафе', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHErA4o7'},
+    {'name': 'Штолле', 'address': 'ул. Шаболовка, 30/12', 'type': 'Русская', 'average_check': 400, 'rating': 4.4,
+     'distance': 3, 'purposes': ['Покушать', 'Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHErANpk'},
+    {'name': 'Шаурляндия', 'address': 'ул. Шаболовка, 30/12', 'type': 'Восточная', 'average_check': 250, 'rating': 4.4,
+     'distance': 3, 'purposes': ['Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHErAVOC'},
+    {'name': 'Печорин', 'address': 'ул. Шаболовка, 19', 'type': 'Кофейея', 'average_check': 250, 'rating': 4.4,
+     'distance': 9, 'purposes': ['Покушать', 'Take & go', 'Общение с коллегами'],
+     'url': 'https://yandex.ru/maps/-/CHErA6Ml'},
+    {'name': 'Street Food', 'address': 'ул. Шаболовка, 24', 'type': 'Восточная', 'average_check': 250, 'rating': 4.1,
+     'distance': 2, 'purposes': ['Take & go'],
+     'url': 'https://yandex.ru/maps/-/CHErAGYY'}
+        ];
+
+        function applyFilters() {
+            const purpose = document.getElementById("purpose").value;
+            const distance = parseInt(document.getElementById("distance").value);
+            const results = document.getElementById("results");
+            results.innerHTML = "";
+
+            const filtered = places.filter(p => p.purposes.includes(purpose) && p.distance <= distance);
+            filtered.forEach(place => {
+                results.innerHTML += `
+                    <div class="place">
+                        <h3>${place.name}</h3>
+                        <p>Тип: ${place.type}</p>
+                        <p>Доступность: ${place.distance} мин</p>
+                        <a href="${place.link}">🔗 Подробнее</a>
+                    </div>
+                `;
+            });
+
+            if (filtered.length === 0) {
+                results.innerHTML = "<p>😔 Ничего не найдено.</p>";
+            }
+        }
+    </script>
+</body>
+</html>
